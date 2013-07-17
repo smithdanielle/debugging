@@ -1,20 +1,61 @@
-% anaglyphSetParams.m
-% Setup to run in PTB3 in A13 with 3DPixx goggles
+function [rgbParamsL,rgbParamsR] = anaglyphSetParams(stereoMode)
+% anaglyphSetParams([stereoMode=9])
 %
-% Determines which sign of polarity the glasses are currently displaying in
-% Created by DS on 1/13
+% A small utility script that can be run to determine individualised colour
+% channel gains for anaglyph stereo. In order to be able to do this
+% on-the-fly, the Psychtoolbox imaging pipeline is enabled. It first 
+% callibrates the left eye and then the right eye. A stereoscopic rectangle
+% is then shown after gains have been set for both eyes. Finally, the gains 
+% for each eye are reported.
+%
+% Press the 'q', 'w' and 'e' keys to increase and the 'a', 's' and 'd' keys
+% to decrease the gain settings for the red, green and blue channels 
+% respectively. Once crosstalk has been minimalised between the eyes, press
+% the spacebar to move on to the next callibration.
+%
+% Optional parameters:
+% 'stereoMode' specifies the type of stereo display algorithm to use:
+%
+% 0 == Mono display - No stereo at all.
+%
+% 6-9 == Different modes of anaglyph stereo for color filter glasses:
+%
+% 6 == Red-Green
+% 7 == Green-Red
+% 8 == Red-Blue
+% 9 == Blue-Red
+%
+% Author:
+% Danielle Smith - lpxds5 at nottingham.ac.uk
 
 Screen('Preference', 'SkipSyncTests', 1);
+
+% Default to stereoMode 9 -- Blue-Red stereo:
+if nargin < 1
+    stereoMode = 9;
+end
+
+AssertOpenGL;
+ListenChar(2);
+
+% Define response key mappings, unify the names of keys across operating
+% systems:
+KbName('UnifyKeyNames');
+upr = KbName('q');
+downr = KbName('a');
+upg = KbName('w');
+downg = KbName('s');
+upb = KbName('e');
+downb = KbName('d');
+space = KbName('space');
+escapeKey = KbName('ESCAPE');
+
 
 % Specify screen res
 res = [1024 1280];
 
 % Let's try the PsychImaging pipeline
 PsychImaging('PrepareConfiguration');
-
-% Which stereomode to use
-stereoMode=9;   % Red-cyan anaglyph glasses
-AssertOpenGL;
 
 % Specify colours
 grey = [190 190 190];
@@ -25,23 +66,11 @@ black = [0 0 0];
 xcen = res(1)/2;
 ycen = res(2)/2;
 
-% Set keys
-upr = KbName('q');
-downr = KbName('a');
-upg = KbName('w');
-downg = KbName('s');
-upb = KbName('e');
-downb = KbName('d');
-space = KbName('space');
-escapeKey = KbName('ESCAPE');
-
 % Set interval to 1
-interval=1;
 leftGainSetting=0;
 rightGainSetting=0;
-rgbParamsL = [1.0 0.0 0.0];
-rgbParamsR = [0.0 0.5 0.5];
-WindowValue = 0;
+rgbParamsL = [1.0 0.0 0.0]; % Default red parameters
+rgbParamsR = [0.0 0.5 0.5]; % Default cyan parameters
  
 % How many screens? Check for use of stereomode
 screens=Screen('Screens');
@@ -57,8 +86,6 @@ HideCursor;
 Screen('Flip', windowPtr);
         
 % Drawing rectangle
-% rect1 = [xcen-200, ycen-100, xcen-100, ycen+100];
-% rect2 = [xcen+100, ycen-100, xcen+200, ycen+100];
 rect1 = [xcen-50, ycen-100, xcen+25, ycen+100];
 rect2 = [xcen-25, ycen-100, xcen+50, ycen+100];
 
@@ -169,3 +196,7 @@ end  % End of timed run
 % Now turn all the expt screens off
 Screen('CloseAll');
 ShowCursor;
+ListenChar(1);
+
+% We're done.
+return;
