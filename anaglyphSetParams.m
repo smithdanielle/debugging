@@ -34,8 +34,6 @@ function [rgbParamsL,rgbParamsR] = anaglyphSetParams(stereoMode)
 % Author:
 % Danielle Smith - lpxds5 at nottingham.ac.uk
 
-close all; clear all;
-
 Screen('Preference', 'SkipSyncTests', 1);
 
 % Default to stereoMode 9 -- Blue-Red stereo:
@@ -59,7 +57,7 @@ space = KbName('space');
 escapeKey = KbName('ESCAPE');
 
 [keyboardIndices] = GetKeyboardIndices;
-keyboardIndex = keyboardIndices(2);
+keyboardIndex = max(keyboardIndices);
 
 % Specify screen res
 res = [1024 1280];
