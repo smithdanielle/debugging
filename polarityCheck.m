@@ -34,8 +34,6 @@ function [correctPolarity] = polarityCheck(stereoMode, usedatapixx)
 % Author:
 % Danielle Smith - lpxds5 at nottingham.ac.uk
 
-Screen('Preference', 'SkipSyncTests', 1);
-
 % Default to stereoMode 1 -- Flip-frame (temporally interleaved) stereo:
 if nargin < 1
     stereoMode = 1;
@@ -59,7 +57,7 @@ escape = KbName('ESCAPE');
 keyboardIndex = max(keyboardIndices);
 
 % Specify screen res
-res = [1024 1280];
+res = [1024 768];
 
 % Define the centre
 xcen = res(1)/2;
@@ -71,8 +69,6 @@ PsychImaging('PrepareConfiguration');
 if usedatapixx == 1
     % Tell PTB we want to display on a DataPixx device:
     PsychImaging('AddTask', 'General', 'UseDataPixx');
-    SetStereoBlueLineSyncParameters(win, windowRect(4)-0); % must be zero, DATAPixx is strict about scanline position
-    Datapixx('SetVideoStereoVesaWaveform', 2); % If driving NVIDIA glasses
 end
 
 % Get the screen numbers, then draw to external screen.
@@ -86,7 +82,13 @@ white = WhiteIndex(screenNumber);
 grey = white / 2;
 
 % Open an on screen window using PsychImaging and color it grey.
-[windowPtr]=PsychImaging('OpenWindow', screenNumber, grey, [], [], [], stereoMode);
+[windowPtr]=PsychImaging('OpenWindow', screenNumber, [grey 0 0], [], [], [], stereoMode);
+
+if usedatapixx == 1
+    % Set up Datapixx shutter glasses:
+    SetStereoBlueLineSyncParameters(windowPtr, res(2)-0); % must be zero, DATAPixx is strict about scanline position
+    Datapixx('SetVideoStereoVesaWaveform', 2); % If driving NVIDIA glasses
+end
 
 % Adjust left and right eye gains if using anaglyph stereo
 if stereoMode == 9
@@ -106,8 +108,11 @@ rectRight = [xcen, ycen-100, xcen+100, ycen];
 rectGrey = [xcen, ycen, xcen + 100, ycen+100];
 rectLeft = [xcen-100, ycen, xcen, ycen+100];
 rectMatrix = vertcat(rectWhite,rectRight,rectGrey,rectLeft)'; % matrix of rects for 'FillRect' command
-rectColors = horzcat(ones(3,2)*white,ones(3,1)*grey,ones(3,1)*white); % matrix of rect colours (white, white, grey, white clockwise from top-left)
-
+if usedatapixx
+    rectColors = [white white grey white; 0 0 0 0; 0 0 0 0]; %matrix of rect colors using RED GUN ONLY (white, white, grey, white clockwise from top-left)
+else
+    rectColors = horzcat(ones(3,2)*white,ones(3,1)*grey,ones(3,1)*white); % matrix of rect colours (white, white, grey, white clockwise from top-left)
+end
 %%%%%%%%%% Timing and stimulus presentation loop %%%%%%%%%%%%%%%%%%%%%%%%%%
 keyCode=zeros(1,256);
 keyIsDown=0;
@@ -118,15 +123,15 @@ while ~any(keyIsDown)
     Screen('SelectStereoDrawBuffer', windowPtr, 0);
     Screen(windowPtr, 'FillRect', rectColors(:,[1,3,4]), rectMatrix(:,[1,3,4])); % White rect
     Screen('TextFont', windowPtr, 'Arial');
-    Screen('TextSize', windowPtr, 30);
-    DrawFormattedText(windowPtr, 'Does the left eye see a vertical contour\n\n AND\n\n right eye a horizontal contour?\n\n\n Press [Y] for yes and [N] for no.', 'center', xcen+300, white);
+    Screen('TextSize', windowPtr, 20);
+    DrawFormattedText(windowPtr, 'Does the left eye see a vertical contour\n\n AND\n\n right eye a horizontal contour?\n\n\n Press [Y] for yes and [N] for no.', 'center', xcen+30, white);
     
     % Select right-eye image buffer for drawing - observer should see a horizontal line:
     Screen('SelectStereoDrawBuffer', windowPtr, 1);
     Screen(windowPtr, 'FillRect', rectColors(:,[1,2,3]), rectMatrix(:,[1,2,3])); % White rect
     Screen('TextFont', windowPtr, 'Arial');
-    Screen('TextSize', windowPtr, 30);
-    DrawFormattedText(windowPtr, 'Does the left eye see a vertical contour\n\n AND\n\n right eye a horizontal contour?\n\n\n Press [Y] for yes and [N] for no.', 'center', xcen+300, white);
+    Screen('TextSize', windowPtr, 20);
+    DrawFormattedText(windowPtr, 'Does the left eye see a vertical contour\n\n AND\n\n right eye a horizontal contour?\n\n\n Press [Y] for yes and [N] for no.', 'center', xcen+30, white);
     
     % Now show it
     Screen('Flip', windowPtr);
@@ -157,7 +162,7 @@ ShowCursor;
 ListenChar(1);
 
 % We're done.
-return;
+%return;
 
 
 
